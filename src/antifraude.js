@@ -5,7 +5,7 @@ const LIMITE_APROVACAO_MANUAL = 10000;
  * dele exigem aprovação manual e não podem ser liberadas automaticamente.
  */
 function podeTransferirAutomaticamente(valorTransferencia) {
-  if (valorTransferencia > LIMITE_APROVACAO_MANUAL) {
+  if (valorTransferencia >= LIMITE_APROVACAO_MANUAL) {
     return false;
   }
   return true;
