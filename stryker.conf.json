@@ -4,7 +4,8 @@
   "testRunner": "jest",
   "coverageAnalysis": "perTest",
   "mutate": ["src/**/*.js"],
-  "reporters": ["html", "clear-text", "progress"],
+  "reportsDir": "reports/mutation",
+  "reporters": ["html", "json", "clear-text", "progress"],
   "htmlReporter": {
     "fileName": "reports/mutation/index.html"
   },

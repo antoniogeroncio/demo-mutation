@@ -6,7 +6,11 @@
   "license": "MIT",
   "scripts": {
     "test": "jest --coverage",
-    "test:mutation": "stryker run"
+    "test:mutation": "stryker run",
+    "report:summary": "node scripts/write-summary.js"
+  },
+  "jest": {
+    "coverageReporters": ["text", "text-summary", "html", "json-summary"]
   },
   "devDependencies": {
     "@stryker-mutator/core": "^9.6.1",

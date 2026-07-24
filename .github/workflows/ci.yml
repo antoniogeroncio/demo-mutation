@@ -9,6 +9,9 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
 jobs:
   test:
     name: Testes + Mutation Testing
@@ -32,7 +35,11 @@ jobs:
       - name: Rodar mutation testing (Stryker)
         run: npm run test:mutation
 
-      - name: Publicar relatório de mutation testing
+      - name: Gerar relatório resumo
+        if: always()
+        run: npm run report:summary
+
+      - name: Publicar relatório de mutation testing (artefato)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -41,7 +48,7 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: Publicar relatório de cobertura
+      - name: Publicar relatório de cobertura (artefato)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -49,3 +56,29 @@ jobs:
           path: coverage
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Preparar relatório para o GitHub Pages
+        if: always()
+        uses: actions/configure-pages@v5
+
+      - name: Empacotar relatório para o GitHub Pages
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports/mutation
+
+  deploy-pages:
+    name: Publicar relatório no GitHub Pages
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

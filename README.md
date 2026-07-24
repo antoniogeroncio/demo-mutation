@@ -6,6 +6,18 @@ Demo reprodutível de como uma suíte de testes com **100% de cobertura** pode
 esconder um bug crítico numa regra de negócio — e de como **mutation
 testing** revela o que a cobertura de linhas não mostra.
 
+## Resultados
+
+Não é preciso clonar o repo para ver o resultado — a pipeline publica tudo
+direto no GitHub:
+
+- **[Aba Actions](https://github.com/antoniogeroncio/demo-mutation/actions/workflows/ci.yml)** →
+  abra o run mais recente e veja o **Summary**: cobertura, mutation score e a
+  lista de mutantes, em markdown, sem baixar nada.
+- **[Relatório interativo (GitHub Pages)](https://antoniogeroncio.github.io/demo-mutation/)** →
+  o relatório HTML do Stryker, navegável linha a linha, publicado
+  automaticamente a cada push em `main`.
+
 ## O cenário
 
 Um sistema financeiro tem uma trava antifraude: qualquer transferência de
@@ -79,18 +91,32 @@ npm run test:mutation
 
 O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em
 todo push/PR: instala as dependências, executa a suíte com cobertura e o
-mutation testing, e publica os dois relatórios como artefatos do run. O
-`stryker.conf.json` define um `break` threshold de 90% — se o mutation score
-cair abaixo disso (por exemplo, se alguém remover o Teste 3), o job falha,
-funcionando como um gate de qualidade real na esteira.
+mutation testing, e:
+
+1. Escreve um **Job Summary** (via `scripts/write-summary.js`) com a
+   cobertura, o mutation score e os mutantes sobreviventes (se houver) —
+   visível direto na página do run, sem precisar baixar nada.
+2. Publica os relatórios completos (cobertura + mutation HTML) como
+   **artefatos** do run.
+3. Publica o relatório HTML do Stryker no **GitHub Pages**, a cada push em
+   `main`.
+
+O `stryker.conf.json` define um `break` threshold de 90% — se o mutation
+score cair abaixo disso (por exemplo, se alguém remover o Teste 3), o job
+falha, funcionando como um gate de qualidade real na esteira.
+
+> **Setup único do Pages**: em Settings → Pages → "Build and deployment",
+> selecione **Source: GitHub Actions**. Depois disso, todo push em `main`
+> atualiza o relatório publicado automaticamente.
 
 ## Estrutura
 
 ```
-.github/workflows/ci.yml  pipeline (testes + mutation testing)
-src/antifraude.js         regra de negócio (a trava antifraude)
-test/antifraude.test.js   suíte de testes
-stryker.conf.json         configuração do mutation testing
+.github/workflows/ci.yml    pipeline (testes + mutation testing + Pages)
+scripts/write-summary.js    gera o Job Summary a partir dos relatórios
+src/antifraude.js           regra de negócio (a trava antifraude)
+test/antifraude.test.js     suíte de testes
+stryker.conf.json           configuração do mutation testing
 ```
 
 ## A lição
