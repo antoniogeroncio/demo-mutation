@@ -57,14 +57,21 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: Empacotar relatório para o GitHub Pages
+      - name: Montar site do Pages (landing + relatório)
+        if: always()
+        run: |
+          mkdir -p public/relatorio
+          cp site/index.html public/index.html
+          if [ -d reports/mutation ]; then cp -r reports/mutation/. public/relatorio/; fi
+
+      - name: Empacotar site para o GitHub Pages
         if: always()
         uses: actions/upload-pages-artifact@v3
         with:
-          path: reports/mutation
+          path: public
 
   deploy-pages:
-    name: Publicar relatório no GitHub Pages
+    name: Publicar site no GitHub Pages
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
