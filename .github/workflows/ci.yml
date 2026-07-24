@@ -57,10 +57,6 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - name: Preparar relatório para o GitHub Pages
-        if: always()
-        uses: actions/configure-pages@v5
-
       - name: Empacotar relatório para o GitHub Pages
         if: always()
         uses: actions/upload-pages-artifact@v3
