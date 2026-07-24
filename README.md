@@ -1,5 +1,7 @@
 # O Vazamento Silencioso
 
+[![CI](https://github.com/antoniogeroncio/demo-mutation/actions/workflows/ci.yml/badge.svg)](https://github.com/antoniogeroncio/demo-mutation/actions/workflows/ci.yml)
+
 Demo reprodutível de como uma suíte de testes com **100% de cobertura** pode
 esconder um bug crítico numa regra de negócio — e de como **mutation
 testing** revela o que a cobertura de linhas não mostra.
@@ -73,12 +75,22 @@ npm run test:mutation
 # relatório HTML em reports/mutation/index.html
 ```
 
+## CI
+
+O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em
+todo push/PR: instala as dependências, executa a suíte com cobertura e o
+mutation testing, e publica os dois relatórios como artefatos do run. O
+`stryker.conf.json` define um `break` threshold de 90% — se o mutation score
+cair abaixo disso (por exemplo, se alguém remover o Teste 3), o job falha,
+funcionando como um gate de qualidade real na esteira.
+
 ## Estrutura
 
 ```
-src/antifraude.js        regra de negócio (a trava antifraude)
-test/antifraude.test.js  suíte de testes
-stryker.conf.json        configuração do mutation testing
+.github/workflows/ci.yml  pipeline (testes + mutation testing)
+src/antifraude.js         regra de negócio (a trava antifraude)
+test/antifraude.test.js   suíte de testes
+stryker.conf.json         configuração do mutation testing
 ```
 
 ## A lição
