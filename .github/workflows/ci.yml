@@ -13,10 +13,8 @@ permissions:
   contents: read
 
 jobs:
-  # Ato "primeiro passa": o estado final do repo (código correto + 3 testes)
-  # roda verde, com cobertura 100% e mutação 100%.
-  validacao:
-    name: Validação (estado final — tudo verde)
+  test:
+    name: Testes + Cobertura + Mutação
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -59,45 +57,15 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-  # Evidência narrada: os 4 atos do "vazamento silencioso", cada um executado
-  # com Jest/Stryker reais e registrado no Job Summary + artefato + Pages.
-  evidencia:
-    name: Evidência (os 4 atos do vazamento silencioso)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Instalar dependências
-        run: npm ci
-
-      - name: Reproduzir os 4 atos e gerar evidência
-        run: node scripts/evidence.js
-
-      - name: Publicar evidência (logs de cada ato)
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: evidencia
-          path: reports/evidence
-          retention-days: 30
-          if-no-files-found: ignore
-
-      - name: Empacotar site de evidência para o GitHub Pages
+      - name: Empacotar relatório para o GitHub Pages
         if: always()
         uses: actions/upload-pages-artifact@v3
         with:
-          path: reports/pages
+          path: reports/mutation
 
   deploy-pages:
-    name: Publicar evidência no GitHub Pages
-    needs: evidencia
+    name: Publicar relatório no GitHub Pages
+    needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
