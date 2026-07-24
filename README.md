@@ -12,6 +12,11 @@ commit. Não há script encenando o resultado: cada run roda `npm test` e/ou
 a [aba Actions](https://github.com/antoniogeroncio/demo-mutation/actions) e
 percorrer os três runs na ordem.
 
+**➡️ Landing page da demo:** <https://antoniogeroncio.github.io/demo-mutation/>
+— a capa conta a história, mostra a tabela das três execuções e linka os runs
+e o relatório interativo do Stryker (em `/relatorio/`). Publicada
+automaticamente pelo GitHub Pages a cada push na `main`.
+
 ## O cenário
 
 Um sistema financeiro tem uma trava antifraude: qualquer transferência de
@@ -115,6 +120,7 @@ quando o incidente real acontece.
 
 ```
 .github/workflows/ci.yml    pipeline (testes + mutation testing + Pages)
+site/index.html             landing page publicada no GitHub Pages
 scripts/write-summary.js    gera o Job Summary a partir dos relatórios
 src/antifraude.js           regra de negócio (a trava antifraude)
 test/antifraude.test.js     suíte de testes

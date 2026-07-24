@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>O Vazamento Silencioso — 100% de cobertura não é 100% de proteção</title>
+<meta name="description" content="Demo: uma trava antifraude com 100% de cobertura que deixa passar exatamente R$ 10.000 — e como mutation testing revela o defeito. Três execuções reais no GitHub Actions.">
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --text: #14181f;
+    --muted: #5b6472;
+    --line: #e3e7ec;
+    --accent: #2f6feb;
+    --green: #1e8e4e;
+    --green-bg: #e7f6ee;
+    --red: #c0392b;
+    --red-bg: #fdecea;
+    --amber: #b7791f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --card: #161b22;
+      --text: #e6edf3;
+      --muted: #9aa4b2;
+      --line: #283040;
+      --accent: #5a8bff;
+      --green: #3fb950;
+      --green-bg: #12261a;
+      --red: #f85149;
+      --red-bg: #2a1514;
+      --amber: #e3a008;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.65;
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 3rem 1.25rem 4rem; }
+  header p.kicker {
+    text-transform: uppercase; letter-spacing: .08em; font-size: .8rem;
+    color: var(--accent); font-weight: 700; margin: 0 0 .5rem;
+  }
+  h1 { font-size: clamp(1.9rem, 5vw, 2.7rem); line-height: 1.15; margin: 0 0 .75rem; }
+  .lead { font-size: 1.15rem; color: var(--muted); margin: 0 0 2rem; }
+  h2 { font-size: 1.35rem; margin: 2.5rem 0 1rem; }
+  p { margin: 0 0 1rem; }
+  code {
+    background: color-mix(in srgb, var(--muted) 18%, transparent);
+    padding: .12em .4em; border-radius: 5px; font-size: .92em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .rule {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 1rem 1.25rem; margin: 1.5rem 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: .95rem; overflow-x: auto;
+  }
+  .table-scroll { overflow-x: auto; margin: 1.25rem 0; }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; }
+  th, td { text-align: left; padding: .7rem .8rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: .82rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  tr:last-child td { border-bottom: none; }
+  .pill { display: inline-block; padding: .15rem .55rem; border-radius: 999px; font-size: .82rem; font-weight: 600; white-space: nowrap; }
+  .pill.green { color: var(--green); background: var(--green-bg); }
+  .pill.red { color: var(--red); background: var(--red-bg); }
+  .cta { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1.5rem 0 .5rem; }
+  a.btn {
+    display: inline-flex; align-items: center; gap: .4rem; text-decoration: none;
+    padding: .6rem 1rem; border-radius: 10px; font-weight: 600; font-size: .95rem;
+    border: 1px solid var(--line); color: var(--text); background: var(--card);
+    transition: border-color .15s ease, transform .05s ease;
+  }
+  a.btn:hover { border-color: var(--accent); }
+  a.btn:active { transform: translateY(1px); }
+  a.btn.primary { background: var(--accent); color: #fff; border-color: transparent; }
+  a.btn .dot { width: .6rem; height: .6rem; border-radius: 50%; }
+  a.btn .dot.green { background: var(--green); }
+  a.btn .dot.red { background: var(--red); }
+  blockquote {
+    margin: 1.25rem 0; padding: .5rem 0 .5rem 1.1rem; border-left: 3px solid var(--accent);
+    color: var(--text);
+  }
+  footer { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .9rem; }
+  footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <p class="kicker">Cobertura de testes × Mutation testing</p>
+      <h1>O Vazamento Silencioso</h1>
+      <p class="lead">Uma trava antifraude com <strong>100% de cobertura</strong> que,
+      mesmo assim, deixa passar uma fraude de exatamente R$ 10.000 — e como o
+      <strong>mutation testing</strong> revela o defeito que a cobertura esconde.</p>
+    </header>
+
+    <p>A regra de negócio é simples: qualquer transferência de risco de
+    <strong>R$ 10.000 ou mais</strong> deve ser bloqueada para aprovação manual.</p>
+
+    <div class="rule">if (valorTransferencia &gt;= LIMITE_APROVACAO_MANUAL) {<br>&nbsp;&nbsp;return false; <span style="opacity:.6">// bloqueado</span><br>}</div>
+
+    <p>Dois testes (R$ 5.000 aprovado, R$ 15.000 bloqueado) fecham a cobertura em
+    100%. A esteira fica verde, o "laudo" diz que está blindado. Mas ninguém
+    testou a <strong>borda exata dos R$ 10.000</strong> — e é aí que mora o vazamento.</p>
+
+    <h2>Três execuções reais no GitHub Actions</h2>
+    <p>Sem simulação: cada execução abaixo é um commit que rodou de verdade na
+    pipeline. Clique e veja os logs.</p>
+
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr><th>#</th><th>O que mudou</th><th>Jest / Cobertura</th><th>Mutação (Stryker)</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>v1</strong></td>
+            <td>Código correto (<code>&gt;=</code>), 2 testes</td>
+            <td><span class="pill green">✔ 100% verde</span></td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>v2</strong></td>
+            <td>Alteram <code>&gt;=</code> para <code>&gt;</code> <em>no código</em></td>
+            <td><span class="pill green">✔ 100% verde</span></td>
+            <td><span class="pill red">✗ mutante sobrevive (88,89%)</span></td>
+          </tr>
+          <tr>
+            <td><strong>v3</strong></td>
+            <td>Corrige <code>&gt;=</code> + teste da borda</td>
+            <td><span class="pill green">✔ 100% verde</span></td>
+            <td><span class="pill green">✔ 100%</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>O coração da demo é o <strong>v2</strong>: a regra foi quebrada de verdade e,
+    ainda assim, o Jest ficou <span style="color:var(--green);font-weight:600">verde</span>
+    com 100% de cobertura. Só o Stryker
+    <span style="color:var(--red);font-weight:600">reprovou</span> — passo verde e passo
+    vermelho no mesmo run.</p>
+
+    <div class="cta">
+      <a class="btn" href="https://github.com/antoniogeroncio/demo-mutation/actions/runs/30090633172"><span class="dot green"></span>Run v1 — verde</a>
+      <a class="btn" href="https://github.com/antoniogeroncio/demo-mutation/actions/runs/30093059689"><span class="dot red"></span>Run v2 — a mutação pegou</a>
+      <a class="btn" href="https://github.com/antoniogeroncio/demo-mutation/actions/runs/30093093626"><span class="dot green"></span>Run v3 — corrigido</a>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="./relatorio/">📊 Ver o relatório interativo do Stryker</a>
+      <a class="btn" href="https://github.com/antoniogeroncio/demo-mutation">Repositório no GitHub</a>
+    </div>
+
+    <h2>A lição</h2>
+    <p>Cobertura de código mede se uma linha <strong>executou</strong>. Mutation
+    testing mede se um teste <strong>falharia caso a regra estivesse errada</strong>.
+    São perguntas diferentes — e a segunda é a que importa.</p>
+
+    <blockquote>Se uma IA ou um desenvolvedor, por engano, altera ou remove aquela
+    cláusula de proteção, existe um teste que pega a regressão? Se a resposta for
+    não, a cobertura de 100% não vale nada: o defeito entra em produção calado, e
+    só aparece no incidente real.</blockquote>
+
+    <footer>
+      Relatório de mutação publicado automaticamente a cada push na <code>main</code>
+      via GitHub Actions + GitHub Pages. Código e pipeline em
+      <a href="https://github.com/antoniogeroncio/demo-mutation">antoniogeroncio/demo-mutation</a>.
+    </footer>
+  </div>
+</body>
+</html>
