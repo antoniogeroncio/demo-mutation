@@ -39,40 +39,52 @@ O run roda `npm test`: a cobertura fecha em **100%** (statements, branches,
 functions e lines) e tudo fica **verde**. A esteira dá o "laudo" de que o
 sistema está blindado.
 
-### Execução 2 — Liga o mutation testing: o mutante sobrevive ⚠️
+### Execução 2 — Altera a regra de verdade: cobertura 100%, testes passando, mas a mutação pega ⚠️
 
-Mesmo código, mesmos dois testes. O run agora roda também
-`npm run test:mutation`, que **executa a modificação** — o [Stryker Mutator](https://stryker-mutator.io/)
-troca automaticamente o `>=` por `>`, exatamente o tipo de defeito sutil que
-uma IA ou um dev distraído introduziria — e roda a suíte de novo:
+Aqui a modificação é **real, no código-fonte**, não uma simulação: alguém
+(uma IA, um dev distraído) troca o `>=` por `>` em `src/antifraude.js`.
+
+```diff
+- if (valorTransferencia >= LIMITE_APROVACAO_MANUAL) {
++ if (valorTransferencia > LIMITE_APROVACAO_MANUAL) {
+```
+
+A trava está quebrada — uma transferência de exatamente R$ 10.000 agora passa
+direto. Mas rode `npm test`: os dois testes **continuam passando** e a
+cobertura segue **100%**. A esteira fica verde. Nada acusa o defeito. É o
+vazamento silencioso acontecendo de verdade.
+
+Quem pega é o `npm run test:mutation`. O [Stryker Mutator](https://stryker-mutator.io/)
+mostra que os testes não distinguem `>` de `>=` — o mutante que reverteria a
+regra **sobrevive**:
 
 ```
 [Survived] EqualityOperator
 src/antifraude.js:8:7
--     if (valorTransferencia >= LIMITE_APROVACAO_MANUAL) {
-+     if (valorTransferencia > LIMITE_APROVACAO_MANUAL) {
+-     if (valorTransferencia > LIMITE_APROVACAO_MANUAL) {
++     if (valorTransferencia >= LIMITE_APROVACAO_MANUAL) {
 
 Mutation score: 88.89 %  (8 killed, 1 survived, 0 timeout)
 ```
 
-Os dois testes **continuam passando** com a regra modificada — o mutante
-**sobrevive**. Ninguém exercita a borda exata dos R$ 10.000, então uma
-transferência de exatamente R$ 10.000 passaria direto pela trava. A cobertura
-segue 100%, mas o mutation score cai para 88,89% e o `break` threshold de 90%
-**reprova o run**. Foi a mutação que pegou o buraco que a cobertura escondeu.
+O mutation score cai para 88,89%, abaixo do `break` threshold de 90%, e o
+Stryker **reprova o run** (o passo do Jest fica verde, o da mutação fica
+vermelho). Foi a mutação que pegou o buraco que a cobertura escondeu.
 
-### Execução 3 — Teste de borda mata o mutante: mutação 100% ✅
+### Execução 3 — Corrige a regra e adiciona o teste de borda: mutação 100% ✅
 
-Adiciona-se um terceiro teste, na borda exata:
+Restaura-se o `>=` e adiciona-se um terceiro teste, na borda exata:
 
 ```js
 // Teste 3: transferência de R$ 10.000 (a borda) é bloqueada
 expect(podeTransferirAutomaticamente(10000)).toBe(false);
 ```
 
-Agora, se o mutante troca `>=` por `>`, o Teste 3 falha e mata o mutante. O
-run roda `npm test` (100% de cobertura) e `npm run test:mutation`
-(**mutation score 100%**, nenhum sobrevivente): **verde de verdade**.
+Esse teste é o que faltava: se alguém trocar `>=` por `>` de novo, o Teste 3
+falha e denuncia a regressão. O run roda `npm test` (100% de cobertura) e
+`npm run test:mutation` (**mutation score 100%**, nenhum sobrevivente):
+**verde de verdade** — cobertura E mutação confirmam que a regra está
+protegida.
 
 ## Como rodar localmente
 

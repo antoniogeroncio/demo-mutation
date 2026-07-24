@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   test:
-    name: Testes + Cobertura
+    name: Testes + Cobertura + Mutação
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -32,6 +32,13 @@ jobs:
       - name: Rodar testes com cobertura (Jest)
         run: npm test
 
+      - name: Rodar mutation testing (Stryker)
+        run: npm run test:mutation
+
+      - name: Gerar relatório resumo
+        if: always()
+        run: npm run report:summary
+
       - name: Publicar relatório de cobertura (artefato)
         if: always()
         uses: actions/upload-artifact@v4
@@ -40,3 +47,34 @@ jobs:
           path: coverage
           retention-days: 30
           if-no-files-found: ignore
+
+      - name: Publicar relatório de mutation testing (artefato)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-report
+          path: reports/mutation
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Empacotar relatório para o GitHub Pages
+        if: always()
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: reports/mutation
+
+  deploy-pages:
+    name: Publicar relatório no GitHub Pages
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
