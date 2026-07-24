@@ -124,6 +124,10 @@ stryker.conf.json           configuração do mutation testing
 Cobertura de código mede se uma linha **executou**. Mutation testing mede
 se um teste **falharia caso a regra estivesse errada**. São perguntas
 diferentes. Um "laudo" de 100% de cobertura não é evidência de que o
-sistema está protegido — só de que o código foi tocado. Para saber se ele
-está de fato blindado, é preciso perguntar: *"se eu quebrar essa regra, algum
-teste percebe?"*
+sistema está protegido — só de que o código foi tocado.
+
+A pergunta certa não é hipotética, é operacional: **uma IA ou um
+desenvolvedor, por engano, altera ou remove aquela cláusula de proteção —
+existe um teste que pega essa regressão?** Se a resposta for não, a
+cobertura de 100% não vale nada: o defeito entra em produção calado, e
+só aparece quando o incidente real acontece.
