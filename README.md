@@ -8,15 +8,26 @@ testing** revela o que a cobertura de linhas não mostra.
 
 ## Resultados
 
-Não é preciso clonar o repo para ver o resultado — a pipeline publica tudo
-direto no GitHub:
+Não é preciso clonar o repo para ver o resultado — a pipeline reproduz a
+história inteira e publica a evidência direto no GitHub. O job **Evidência**
+executa os quatro atos abaixo com Jest e Stryker reais, a cada run:
+
+| Ato | Código | Testes | Evidência |
+|---|---|---|---|
+| **1 · Falsa segurança** | correto `>=` | 2 | Cobertura ✅ 100% · mutante `>` **sobrevive** (88.89%) |
+| **2 · Bug silencioso** | bug `>` | 2 | Jest ✅ **passa** — a fraude de R$ 10.000 entra e ninguém vê |
+| **3 · Regressão detectada** | bug `>` | 3 | Jest ❌ **falha** no Teste 3 — defeito barrado |
+| **4 · Corrigido** | correto `>=` | 3 | Cobertura ✅ 100% · mutação ✅ 100% |
+
+Onde ver:
 
 - **[Aba Actions](https://github.com/antoniogeroncio/demo-mutation/actions/workflows/ci.yml)** →
-  abra o run mais recente e veja o **Summary**: cobertura, mutation score e a
-  lista de mutantes, em markdown, sem baixar nada.
-- **[Relatório interativo (GitHub Pages)](https://antoniogeroncio.github.io/demo-mutation/)** →
-  o relatório HTML do Stryker, navegável linha a linha, publicado
-  automaticamente a cada push em `main`.
+  abra o run mais recente, job **Evidência**, e leia o **Summary**: cada ato
+  com a saída real do Jest/Stryker, sem baixar nada. Os logs completos estão
+  no artefato `evidencia`.
+- **[Relatórios interativos (GitHub Pages)](https://antoniogeroncio.github.io/demo-mutation/)** →
+  os relatórios HTML do Stryker do Ato 1 (mutante sobrevivente) e do Ato 4
+  (blindado), navegáveis linha a linha, publicados a cada push em `main`.
 
 ## O cenário
 
@@ -90,32 +101,31 @@ npm run test:mutation
 ## CI
 
 O workflow em [`.github/workflows/ci.yml`](.github/workflows/ci.yml) roda em
-todo push/PR: instala as dependências, executa a suíte com cobertura e o
-mutation testing, e:
+todo push/PR e tem dois jobs:
 
-1. Escreve um **Job Summary** (via `scripts/write-summary.js`) com a
-   cobertura, o mutation score e os mutantes sobreviventes (se houver) —
-   visível direto na página do run, sem precisar baixar nada.
-2. Publica os relatórios completos (cobertura + mutation HTML) como
-   **artefatos** do run.
-3. Publica o relatório HTML do Stryker no **GitHub Pages**, a cada push em
-   `main`.
-
-O `stryker.conf.json` define um `break` threshold de 90% — se o mutation
-score cair abaixo disso (por exemplo, se alguém remover o Teste 3), o job
-falha, funcionando como um gate de qualidade real na esteira.
+- **Validação** — o estado final do repo (código correto + 3 testes) roda
+  verde: cobertura 100%, mutação 100%. Escreve um Job Summary (via
+  `scripts/write-summary.js`) e publica cobertura + relatório de mutação como
+  artefatos. O `stryker.conf.json` define um `break` threshold de 90%, então
+  se alguém remover o Teste 3 e o mutation score cair, este job **falha** —
+  gate de qualidade real na esteira.
+- **Evidência** — reproduz os quatro atos da tabela em [Resultados](#resultados)
+  (via `scripts/evidence.js`), cada um com Jest/Stryker reais, e registra a
+  saída como prova no Job Summary + artefato `evidencia` + site no GitHub
+  Pages. É aqui que o "os testes falham" do Ato 3 aparece documentado.
 
 > **Setup único do Pages**: em Settings → Pages → "Build and deployment",
 > selecione **Source: GitHub Actions**. Depois disso, todo push em `main`
-> atualiza o relatório publicado automaticamente.
+> atualiza o site de evidência automaticamente.
 
 ## Estrutura
 
 ```
-.github/workflows/ci.yml    pipeline (testes + mutation testing + Pages)
-scripts/write-summary.js    gera o Job Summary a partir dos relatórios
+.github/workflows/ci.yml    pipeline (validação + evidência + Pages)
+scripts/evidence.js         reproduz os 4 atos e gera a evidência do CI
+scripts/write-summary.js    gera o Job Summary do job de validação
 src/antifraude.js           regra de negócio (a trava antifraude)
-test/antifraude.test.js     suíte de testes
+test/antifraude.test.js     suíte de testes (estado final: 3 testes)
 stryker.conf.json           configuração do mutation testing
 ```
 
